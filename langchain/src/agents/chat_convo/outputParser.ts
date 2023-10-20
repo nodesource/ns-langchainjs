@@ -62,10 +62,27 @@ export class ChatConversationalAgentOutputParser extends AgentActionOutputParser
         return { returnValues: { output: action_input }, log: text };
       }
       return { tool: action, toolInput: action_input, log: text };
+    }
+    catch (e) {
+      const response = this.parseBrokenJson(jsonOutput)
+      const { action, action_input } = response
+      if (action === "Final Answer") {
+        return { returnValues: { output: action_input }, log: text }
+      }
+      return { tool: action, toolInput: action_input, log: text }
+    }
+  }
+
+  parseBrokenJson (text: string) {
+    try {
+      const regex = /"action": "([^"]+)",\s+"action_input": "([^"]+)"/g
+      const [matches] = [...text.matchAll(regex)]
+
+      return { action: matches[1], action_input: matches[2] }
     } catch (e) {
       throw new OutputParserException(
         `Failed to parse. Text: "${text}". Error: ${e}`
-      );
+      )
     }
   }
 
